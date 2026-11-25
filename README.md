@@ -24,6 +24,7 @@ BootROM -> U-Boot SPL -> TF-A BL31 -> EDK2 (BL33) -> OS
 |---|---|---|---|
 | [Radxa ROCK 4D](docs/boards/rock4d.md) | SPI NOR | Linux (Fedora from NVMe). No Windows: built without ACPI. | after 0.2.1 |
 | [ArmSoM CM5-IO](docs/boards/cm5io.md) | eMMC or SD card | Linux (Fedora from NVMe), Windows 11 23H2 desktop from the eMMC. | 0.4.x |
+| [100ASK DShanPi A1](docs/boards/dshanpi-a1.md) | eMMC or SD card | Ubuntu 26.04 from the eMMC (installed over netboot.xyz). Only GMAC0 in the firmware; no fan support. | not yet |
 | [LCKFB TaishanPi 3M](docs/boards/tspi3m.md) | eMMC | Windows 11 23H2 with GPU, DSI touch screen, audio, Bluetooth, NPU; Armbian edge [with limits](docs/linux.md#lckfb-taishanpi-3m). | `main`, 2026-11-24 |
 
 Each result comes from one unit of each board ([testing](docs/dev/testing.md)).
@@ -64,7 +65,7 @@ Pictures: [gallery](docs/gallery.md).
 
 ```bash
 scripts/setup-host.sh
-scripts/build.sh   cm5io      # or rock4d, tspi3m
+scripts/build.sh   cm5io      # or rock4d, tspi3m, dshanpi-a1
 scripts/package.sh cm5io      # -> out/CM5IO/
 ```
 

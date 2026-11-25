@@ -17,8 +17,8 @@ scripts/package.sh cm5io       # -> out/CM5IO/CM5IO-sdcard.img
 
 Boards live in
 [`boards/`](https://github.com/gahingwoo/edk2-rk3576/tree/main/boards):
-`rock4d` (Radxa ROCK 4D), `cm5io` (ArmSoM CM5-IO) and `tspi3m` (LCKFB
-TaishanPi 3M).
+`rock4d` (Radxa ROCK 4D), `cm5io` (ArmSoM CM5-IO), `tspi3m` (LCKFB
+TaishanPi 3M) and `dshanpi-a1` (100ASK DShanPi A1).
 
 `scripts/build.sh <board> clean` wipes `Build/` and `Conf/` first.
 

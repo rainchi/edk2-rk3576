@@ -1,0 +1,9 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+
+#include "rk3576-u-boot.dtsi"
+
+/*
+ * Nothing board-specific.  rk3576-u-boot.dtsi's boot order,
+ * "same-as-spl", &sdmmc, &sdhci, has the SPL load its FIT from the SD card
+ * it was itself loaded from.
+ */

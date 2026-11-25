@@ -24,6 +24,7 @@ BootROM -> U-Boot SPL -> TF-A BL31 -> EDK2 (BL33) -> 操作系统
 |---|---|---|---|
 | [Radxa ROCK 4D](docs/boards/rock4d.zh-CN.md) | SPI NOR | Linux（从 NVMe 启动 Fedora）。不支持 Windows：编译时不带 ACPI。 | 0.2.1 之后 |
 | [ArmSoM CM5-IO](docs/boards/cm5io.zh-CN.md) | eMMC 或 SD 卡 | Linux（从 NVMe 启动 Fedora），从 eMMC 启动 Windows 11 23H2 能进桌面。 | 0.4.x |
+| [百问网东山派 A1](docs/boards/dshanpi-a1.zh-CN.md) | eMMC 或 SD 卡 | 从 eMMC 运行 Ubuntu 26.04（经 netboot.xyz 安装）。固件里只有 GMAC0 可用；不支持风扇。 | 尚未 |
 | [立创泰山派 3M](docs/boards/tspi3m.zh-CN.md) | eMMC | Windows 11 23H2：GPU、DSI 触摸屏、音频、蓝牙、NPU；Armbian edge [有限制](docs/linux.zh-CN.md#立创泰山派-3m)。 | `main`，2026-11-24 |
 
 每块板的结果都来自同一块实物（见[测试](docs/dev/testing.zh-CN.md)）。泰山派 3M 在 Windows 下的触摸、蓝牙、
@@ -55,7 +56,7 @@ BootROM -> U-Boot SPL -> TF-A BL31 -> EDK2 (BL33) -> 操作系统
 
 ```bash
 scripts/setup-host.sh
-scripts/build.sh   cm5io      # 或 rock4d、tspi3m
+scripts/build.sh   cm5io      # 或 rock4d、tspi3m、dshanpi-a1
 scripts/package.sh cm5io      # 输出到 out/CM5IO/
 ```
 

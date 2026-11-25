@@ -13,7 +13,7 @@ scripts/build.sh   cm5io       # compile
 scripts/package.sh cm5io       # -> out/CM5IO/CM5IO-sdcard.img
 ```
 
-板子定义在 [`boards/`](https://github.com/gahingwoo/edk2-rk3576/tree/main/boards) 里：`rock4d`（Radxa ROCK 4D）、`cm5io`（ArmSoM CM5-IO）和 `tspi3m`（立创泰山派 3M）。
+板子定义在 [`boards/`](https://github.com/gahingwoo/edk2-rk3576/tree/main/boards) 里：`rock4d`（Radxa ROCK 4D）、`cm5io`（ArmSoM CM5-IO）、`tspi3m`（立创泰山派 3M）和 `dshanpi-a1`（百问网东山派 A1）。
 
 `scripts/build.sh <board> clean` 会先清空 `Build/` 和 `Conf/`。
 

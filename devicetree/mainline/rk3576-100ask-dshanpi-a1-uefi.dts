@@ -1,0 +1,60 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * 100ASK DShanPi A1 -- the device tree the UEFI firmware hands to the OS.
+ *
+ * rk3576-100ask-dshanpi-a1.dts next to this file is the mainline Linux file
+ * (torvalds/linux 4dce97c6c265, 2026-11-24), unchanged.  Anything the
+ * firmware needs on top of it goes here, so the mainline file can be
+ * replaced by a newer one without a merge.
+ *
+ * Copyright (c) 2026, the edk2-rk3576 contributors
+ */
+
+#include "rk3576-100ask-dshanpi-a1.dts"
+
+/*
+ * DRD0, the USB-C port: peripheral, not the mainline default of OTG.
+ *
+ * With dr_mode left at OTG and no role switch or extcon behind it, Linux
+ * starts DRD0 through dwc3's OTG block, and dwc3_otg_update() ->
+ * dwc3_host_init() -> dwc3_power_off_all_roothub_ports() takes an SError on
+ * DRD0's xHCI registers: Ubuntu 26.04 (Linux 7.0) over netboot.xyz,
+ * 2026-11-26, two boots, with DRD0's U3 port enabled and with it disabled.
+ * The other RK3576 boards here force DRD0 to host and do not hit it.
+ *
+ * Peripheral rather than host because host would switch the port's VBUS on
+ * (vbus5v0_typec is u2phy0_otg's phy-supply) and there is no CC controller to
+ * tell a charger or a PC from a device: the board runs from its 12 V input,
+ * so USB-C is a data port only, and the firmware keeps VBUS off for the same
+ * reason.  For USB-C host use with a known device, change this to "host".
+ */
+&usb_drd0_dwc3 {
+	dr_mode = "peripheral";
+};
+
+/*
+ * eMMC: HS200, no command queueing, at most 200 MHz.
+ *
+ * With mainline's settings (HS400 with enhanced strobe, CQE on from
+ * rk3576.dtsi) the Ubuntu 26.04 installer's writes to the eMMC failed with
+ * EIO, 2026-11-26.  CQE off and max-frequency as on the CM5 (rk3576-armsom-
+ * cm5.dtsi) were not enough: still in HS400 at 198 MHz, a few minutes into
+ * the install the kernel logged "mmc_hs400_to_hs200 failed, error -110",
+ * "switch to hs400 failed, err:-110", "tried to HW reset card, got error
+ * -110", then "Timeout waiting for hardware cmd interrupt", and every later
+ * write failed.  HS400 is not used.
+ *
+ * HS200 at 198 MHz still failed a few writes in a full install (EIO, the
+ * driver asking to drop the clock below 52 MHz while recovering).  At
+ * 148.5 MHz (debugfs mmc0/clock on the installed system, 2026-11-26) eight
+ * rounds of 2 GiB written with O_DIRECT, read back and checksummed all
+ * matched with no kernel errors, at 93-102 MB/s write, which is the card's
+ * own write speed, so the lower clock costs nothing measurable.
+ */
+&sdhci {
+	max-frequency = <150000000>;
+	mmc-hs200-1_8v;
+	/delete-property/ mmc-hs400-1_8v;
+	/delete-property/ mmc-hs400-enhanced-strobe;
+	/delete-property/ supports-cqe;
+};

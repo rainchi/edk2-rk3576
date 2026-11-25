@@ -1,0 +1,41 @@
+## @file
+#
+#  RockchipPlatformLib for the 100ASK DShanPi A1 (RK3576)
+#
+#  Board-specific initialization: GPIO iomux, PMIC voltage rails, GMAC,
+#  USB, PCIe reset, HDMI, SPI NOR, and platform identification.
+#
+#  Copyright (c) 2021, Rockchip Limited.
+#  Copyright (c) 2023-2025, Mario Bălănică <mariobalanica02@gmail.com>
+#  Copyright (c) 2026, the edk2-rk3576 contributors
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x0001001A
+  BASE_NAME                      = RockchipPlatformLib
+  FILE_GUID                      = 4ebf36da-dca8-41a8-998d-fca0e758752d
+  MODULE_TYPE                    = BASE
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = RockchipPlatformLib
+
+[Sources]
+  RockchipPlatformLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  ArmPkg/ArmPkg.dec
+  EmbeddedPkg/EmbeddedPkg.dec
+  Silicon/Rockchip/RockchipPkg.dec
+  Silicon/Rockchip/RK3576/RK3576.dec
+
+[LibraryClasses]
+  BaseLib
+  DebugLib
+  IoLib
+  GpioLib
+  RK806
+  PcdLib
+  TimerLib

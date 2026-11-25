@@ -17,7 +17,7 @@ jobs:
       # CI at all before the restructure -- only ROCK 4D and a NanoPi target
       # that is no longer in this tree.
       matrix:
-        board: [cm5io, rock4d, tspi3m]
+        board: [cm5io, rock4d, tspi3m, dshanpi-a1]
 
     steps:
       - uses: actions/checkout@v4
