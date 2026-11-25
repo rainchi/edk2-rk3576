@@ -260,15 +260,21 @@ RK3576InitCoolingFan (
                      );
   ASSERT_EFI_ERROR (Status);
 
-  if (Supported == 0) {
-    return;
-  }
-
+  //
+  // Created even without a fan: the option is hidden then, but it sits on
+  // the main settings page, and the setup browser fails the whole page's
+  // save ("Submit Fail For Form") when one of its efivarstores does not
+  // exist.  DShanPi A1, no fan, 2026-11-26.
+  //
   Size   = sizeof (On);
   Status = gRT->GetVariable (L"CoolingFan", &gRK3576DxeFormSetGuid, NULL, &Size, &On);
   if (EFI_ERROR (Status) || (On > 1)) {
     Status = PcdSet8S (PcdCoolingFan, FixedPcdGet8 (PcdCoolingFanDefault));
     ASSERT_EFI_ERROR (Status);
+  }
+
+  if (Supported == 0) {
+    return;
   }
 
   On = (PcdGet8 (PcdCoolingFan) != 0) ? 1 : 0;
@@ -381,6 +387,41 @@ SetupNetworkTimeSyncVariables (
 }
 
 /**
+  RtVarEmmcCommit ("Save OS Variable Changes to eMMC"): RkFvbDxe only reads
+  it, and unlike the settings above it has no PCD whose set would create it.
+  The setup browser writes a form's efivarstores back through
+  RouteConfigRespForEfiVarStore(), which fails when the variable does not
+  exist, so on a freshly formatted NV store saving the page failed with
+  "Submit Fail For Form" (DShanPi A1, 2026-11-26).  Create it, off.
+**/
+STATIC
+VOID
+SetupRtVarEmmcCommitVariable (
+  VOID
+  )
+{
+  EFI_STATUS  Status;
+  UINTN       Size;
+  UINT8       Var8;
+
+  Size   = sizeof (Var8);
+  Status = gRT->GetVariable (L"RtVarEmmcCommit", &gRK3576DxeFormSetGuid, NULL, &Size, &Var8);
+  if (Status == EFI_NOT_FOUND) {
+    Var8   = 0;
+    Status = gRT->SetVariable (
+                    L"RtVarEmmcCommit",
+                    &gRK3576DxeFormSetGuid,
+                    EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
+                    sizeof (Var8),
+                    &Var8
+                    );
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a: cannot create RtVarEmmcCommit: %r\n", __func__, Status));
+    }
+  }
+}
+
+/**
   The NPU, at EndOfDxe: its rail is set over I2C, and the bus is set up by
   I2cDxe, whose entry point may run after this driver's.
 **/
@@ -448,6 +489,7 @@ RK3576EntryPoint (
 
   /* Whether NetworkTimeSyncDxe sets the clock from NTP */
   SetupNetworkTimeSyncVariables ();
+  SetupRtVarEmmcCommitVariable ();
 
   /* Seed the GPU 775 mV option (GpuRail.c) */
   RK3576GpuRailSetupVariables ();
