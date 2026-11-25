@@ -401,6 +401,17 @@ EqosStart (
     return Status;
   }
 
+  //
+  // EqosInitialize() soft-resets the MAC, which puts MAC_CONFIGURATION back to
+  // 1000 Mb/s half duplex.  EqosUpdateLink() only programs speed and duplex
+  // when MediaPresent changes, and MediaPresent is still TRUE from before, so
+  // after a Shutdown + Initialize (iPXE does one on start) the MAC stayed half
+  // duplex on a full duplex link and flagged every received frame "Receive
+  // Error".  Forget the old link state so it is programmed again now.
+  //
+  Eqos->SnpMode.MediaPresent = FALSE;
+  EqosUpdateLink (Eqos);
+
   Status = EqosDmaMapAllRxDescriptors (Eqos);
   if (EFI_ERROR (Status)) {
     return Status;
