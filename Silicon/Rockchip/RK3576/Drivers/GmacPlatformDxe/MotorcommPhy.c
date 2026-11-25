@@ -1,6 +1,6 @@
 /** @file
  *
- *  Motorcomm YT8531 / YT8531S GbE PHY init.
+ *  Motorcomm YT8521 / YT8531 / YT8531S GbE PHY init.
  *
  *  The ArmSoM CM5-IO carrier populates a YT8531C on GMAC0, not the RTL8211F
  *  the RK3576 devicetree names.  Before this file the only PHY driver here was
@@ -14,8 +14,12 @@
  *  change; on CM5-IO the platform library's GmacIomux() does, before the PHY
  *  leaves reset.
  *
+ *  The 100ASK DShanPi A1 has a YT8521SC on each GMAC (PHY ID 0x0000011A).
+ *
  *  Reference: linux/drivers/net/phy/motorcomm.c
  *    yt8531_config_init() -> ytphy_rgmii_clk_delay_config() + yt8531_set_ds()
+ *    yt8521_config_init() -> ytphy_rgmii_clk_delay_config(), auto sleep off,
+ *                            RX clock on with no cable
  *
  *  Copyright (c) 2026, gahingwoo <huhuvmb88@outlook.com>
  *
@@ -38,6 +42,15 @@
 #define YTPHY_PAGE_DATA    0x1F
 
 /* Ext registers */
+#define YT8521_CLOCK_GATING_REG        0x0C
+#define   YT8521_CGR_RX_CLK_EN         BIT12
+
+#define YT8521_EXTREG_SLEEP_CONTROL1_REG 0x27
+#define   YT8521_ESC1R_SLEEP_SW        BIT15
+
+#define YT8521_REG_SPACE_SELECT_REG    0xA000
+#define   YT8521_RSSR_SPACE_MASK       BIT1           /* 0: UTP, 1: fiber */
+
 #define YT8521_CHIP_CONFIG_REG         0xA001
 #define   YT8521_CCR_RXC_DLY_EN        BIT8
 
@@ -108,7 +121,7 @@ YtPhyModifyExt (
 }
 
 /**
-  Program the RGMII clock delays and RX pad drive strength.
+  Program the RGMII clock delays (YT8521 and YT8531 alike).
 
   GMAC0 on both supported boards runs RGMII-ID: the delays are generated in
   the PHY, not the MAC, so both the rx and ge_tx delay fields get programmed.
@@ -121,12 +134,11 @@ YtPhyModifyExt (
 **/
 STATIC
 VOID
-Yt8531PhyInit (
+YtPhyRgmiiDelayConfig (
   IN EFI_PHYSICAL_ADDRESS  GmacBase
   )
 {
   UINT16  Val;
-  UINT16  Ds;
 
   /* rx delay comes from the 1.950 ns field alone; see above. */
   YtPhyModifyExt (
@@ -148,6 +160,18 @@ Yt8531PhyInit (
     (UINT16)(YT8521_RC1R_RX_DELAY_MASK | YT8521_RC1R_GE_TX_DELAY_MASK),
     Val
     );
+}
+
+STATIC
+VOID
+Yt8531PhyInit (
+  IN EFI_PHYSICAL_ADDRESS  GmacBase
+  )
+{
+  UINT16  Val;
+  UINT16  Ds;
+
+  YtPhyRgmiiDelayConfig (GmacBase);
 
   /* RGMII RX clock pad drive strength. */
   Ds = YT8531_RGMII_RX_DS_DEFAULT;
@@ -174,6 +198,36 @@ Yt8531PhyInit (
   MicroSecondDelay (10000);
 }
 
+/**
+  YT8521 / YT8521SC in UTP-to-RGMII mode.
+
+  The delay registers are the YT8531's, so the same RGMII-ID setup applies.
+  The YT8531 pad drive strength step is left out: mainline only does it for
+  the YT8531, and the YT8521's pad register is laid out differently.
+
+  The YT8521SC can also do fiber; the mode straps pick UTP on these boards,
+  and the register space is pointed at UTP so the MII registers that
+  GmacPlatformDxe reads afterwards are the copper ones.
+**/
+STATIC
+VOID
+Yt8521PhyInit (
+  IN EFI_PHYSICAL_ADDRESS  GmacBase
+  )
+{
+  YtPhyModifyExt (GmacBase, YT8521_REG_SPACE_SELECT_REG, YT8521_RSSR_SPACE_MASK, 0);
+
+  YtPhyRgmiiDelayConfig (GmacBase);
+
+  /* Auto sleep off: the PHY would otherwise power down with no cable in. */
+  YtPhyModifyExt (GmacBase, YT8521_EXTREG_SLEEP_CONTROL1_REG, YT8521_ESC1R_SLEEP_SW, 0);
+
+  /* Keep RXC running with no cable in, so the MAC's DMA reset can finish. */
+  YtPhyModifyExt (GmacBase, YT8521_CLOCK_GATING_REG, YT8521_CGR_RX_CLK_EN, 0);
+
+  MicroSecondDelay (10000);
+}
+
 EFI_STATUS
 EFIAPI
 MotorcommPhyInit (
@@ -182,6 +236,10 @@ MotorcommPhyInit (
   )
 {
   switch (PhyId) {
+    case 0x0000011A:
+      DEBUG ((DEBUG_INFO, "%a: Found Motorcomm YT8521 GbE PHY\n", __func__));
+      Yt8521PhyInit (GmacBase);
+      break;
     case 0x4F51E91B:
       DEBUG ((DEBUG_INFO, "%a: Found Motorcomm YT8531 GbE PHY\n", __func__));
       Yt8531PhyInit (GmacBase);
